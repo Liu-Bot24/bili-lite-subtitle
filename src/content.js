@@ -29,7 +29,7 @@
     searchQuery: "",
     status: "正在识别当前视频",
     statusTone: "muted",
-    collapsed: false,
+    collapsed: true,
     userToggledCollapse: false,
     loadingTracks: false,
     loadingSubtitle: false,
@@ -282,6 +282,7 @@
     refs.resizer.addEventListener("pointerdown", startResizeDrag);
     protectPanelInteractions(root);
     unlockPointerAncestors(root);
+    setStatus(state.status, state.statusTone);
     setPanelCollapsed(state.collapsed);
     return true;
   }
@@ -801,6 +802,7 @@
     state.cues = [];
     state.searchQuery = "";
     state.userToggledCollapse = false;
+    setPanelCollapsed(true);
     state.lastHref = currentHref;
     renderAll();
 
@@ -1079,7 +1081,7 @@
   }
 
   function applyAutoPanelVisibility(hasSubtitles) {
-    if (state.userToggledCollapse || !refs.root) {
+    if (state.userToggledCollapse) {
       return;
     }
     setPanelCollapsed(!hasSubtitles);

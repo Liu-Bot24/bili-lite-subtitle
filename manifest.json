@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "哔哩哔哩轻量字幕助手",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "danmu.liu-qi.cn 的辅助浏览器插件，可在 B 站视频页查看、复制和下载字幕，并一键跳转 AI 分析。",
   "icons": {
     "16": "icons/icon16.png",
