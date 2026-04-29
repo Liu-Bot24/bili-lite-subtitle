@@ -30,6 +30,7 @@
     status: "正在识别当前视频",
     statusTone: "muted",
     collapsed: false,
+    userToggledCollapse: false,
     loadingTracks: false,
     loadingSubtitle: false,
     lastHref: "",
@@ -281,6 +282,7 @@
     refs.resizer.addEventListener("pointerdown", startResizeDrag);
     protectPanelInteractions(root);
     unlockPointerAncestors(root);
+    setPanelCollapsed(state.collapsed);
     return true;
   }
 
@@ -798,6 +800,7 @@
     state.selectedTrackId = "";
     state.cues = [];
     state.searchQuery = "";
+    state.userToggledCollapse = false;
     state.lastHref = currentHref;
     renderAll();
 
@@ -847,6 +850,7 @@
       if (!state.tracks.length) {
         state.selectedTrackId = "";
         setStatus("没有找到可用字幕", "warn");
+        applyAutoPanelVisibility(false);
         renderAll();
         return;
       }
@@ -862,6 +866,7 @@
       state.selectedTrackId = "";
       state.cues = [];
       setStatus(error.message || "字幕列表获取失败", "error");
+      applyAutoPanelVisibility(false);
       renderAll();
     } finally {
       setBusy(false);
@@ -904,9 +909,11 @@
       } else {
         setStatus(`已载入 ${state.cues.length} 行字幕`, "ok");
       }
+      applyAutoPanelVisibility(Boolean(state.cues.length));
     } catch (error) {
       state.cues = [];
       setStatus(error.message || "字幕内容获取失败", "error");
+      applyAutoPanelVisibility(false);
     } finally {
       state.loadingSubtitle = false;
       renderViewer();
@@ -1067,7 +1074,22 @@
   }
 
   function togglePanel() {
-    state.collapsed = !state.collapsed;
+    state.userToggledCollapse = true;
+    setPanelCollapsed(!state.collapsed);
+  }
+
+  function applyAutoPanelVisibility(hasSubtitles) {
+    if (state.userToggledCollapse || !refs.root) {
+      return;
+    }
+    setPanelCollapsed(!hasSubtitles);
+  }
+
+  function setPanelCollapsed(collapsed) {
+    state.collapsed = Boolean(collapsed);
+    if (!refs.root || !refs.collapse) {
+      return;
+    }
     refs.root.classList.toggle("bdsp-panel-collapsed", state.collapsed);
     refs.collapse.textContent = state.collapsed ? "⌄" : "⌃";
     refs.collapse.setAttribute("aria-label", state.collapsed ? "展开字幕面板" : "折叠字幕面板");
