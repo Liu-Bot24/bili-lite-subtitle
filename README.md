@@ -1,10 +1,10 @@
 # B 站轻量字幕助手
 
+![B 站轻量字幕助手预览](assets/github-preview.jpg)
+
 Languages: [简体中文](./README.md) · [English](./README.en.md)
 
 这是一款用于 B 站视频页的轻量字幕浏览器扩展，也可以配合弹幕分析网站 [danmu.liu-qi.cn](https://danmu.liu-qi.cn/) 进行字幕深度 AI 分析。它可在 B 站视频页查看、搜索、复制和下载字幕，并可一键把当前视频带到 AI 深度分析页。
-
-![B 站轻量字幕助手预览](assets/github-preview.jpg)
 
 ## 这是一个什么插件
 
