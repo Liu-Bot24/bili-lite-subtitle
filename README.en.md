@@ -4,7 +4,7 @@ Languages: [简体中文](./README.md) · [English](./README.en.md)
 
 This is a companion browser extension for the danmaku analysis site [danmu.liu-qi.cn](https://danmu.liu-qi.cn/). It also works as a standalone subtitle tool for viewing, searching, copying, and downloading subtitles from Bilibili videos.
 
-![Bilibili Lite Subtitle Helper preview](assets/github-preview.png)
+![Bilibili Lite Subtitle Helper preview](assets/github-preview.jpg)
 
 ## What It Is
 
