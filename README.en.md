@@ -23,6 +23,16 @@ You can use it on its own to download subtitles. If you also use [danmu.liu-qi.c
 
 ## Installation
 
+### Install From Chrome Web Store
+
+The recommended installation method is the Chrome Web Store:
+
+[Install B 站轻量字幕助手](https://chromewebstore.google.com/detail/b-%E7%AB%99%E8%BD%BB%E9%87%8F%E5%AD%97%E5%B9%95%E5%8A%A9%E6%89%8B/ifhokpfhemfpnmgoajodifgamfbhioga)
+
+After installation, open a Bilibili video page and use the subtitle panel on the right side of the page.
+
+### Load From Source
+
 1. Open Chrome or Edge.
 2. Go to `chrome://extensions/`.
 3. Turn on Developer mode.

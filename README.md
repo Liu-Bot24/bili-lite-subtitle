@@ -23,6 +23,16 @@ B 站轻量字幕助手会在 B 站视频页的右侧区域增加一个轻量字
 
 ## 安装
 
+### 从 Chrome Web Store 安装
+
+推荐直接从 Chrome Web Store 安装：
+
+[安装 B 站轻量字幕助手](https://chromewebstore.google.com/detail/b-%E7%AB%99%E8%BD%BB%E9%87%8F%E5%AD%97%E5%B9%95%E5%8A%A9%E6%89%8B/ifhokpfhemfpnmgoajodifgamfbhioga)
+
+安装后打开 B 站视频页，即可在页面右侧使用字幕面板。
+
+### 从源码加载
+
 1. 打开 Chrome 或 Edge。
 2. 进入 `chrome://extensions/`。
 3. 开启右上角的“开发者模式”。
