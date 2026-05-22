@@ -17,7 +17,14 @@
     OPEN_SITE_RESULT: "OPEN_SITE_RESULT",
   });
 
+  const I18n = globalThis.BiliSubtitleI18n;
+
+  function getPreferredLocale() {
+    return typeof I18n?.pickLocale === "function" ? I18n.pickLocale() : "zh";
+  }
+
   const state = {
+    locale: getPreferredLocale(),
     bvid: "",
     cid: null,
     page: 1,
@@ -27,7 +34,9 @@
     selectedTrackId: "",
     cues: [],
     searchQuery: "",
-    status: "正在识别当前视频",
+    status: "",
+    statusKey: "status.detectingCurrentVideo",
+    statusParams: {},
     statusTone: "muted",
     collapsed: true,
     userToggledCollapse: false,
@@ -46,6 +55,13 @@
   let pendingMountTarget = null;
   let parsedInitialState = null;
 
+  function t(key, params = {}) {
+    if (typeof I18n?.translate === "function") {
+      return I18n.translate(key, params, state.locale);
+    }
+    return key;
+  }
+
   function ready(callback) {
     if (document.body) {
       callback();
@@ -61,23 +77,35 @@
   function sendMessage(type, payload = {}) {
     return new Promise((resolve, reject) => {
       if (!canUseRuntime()) {
-        reject(new Error("扩展通信不可用，请重新加载扩展"));
+        reject(new Error(t("error.runtimeUnavailable")));
         return;
       }
 
       chrome.runtime.sendMessage({ type, ...payload }, (response) => {
         const lastError = chrome.runtime.lastError;
         if (lastError) {
-          reject(new Error(lastError.message || "扩展后台无响应"));
+          reject(new Error(lastError.message || t("error.runtimeNoResponse")));
           return;
         }
         if (response?.ok === false) {
-          reject(new Error(response.error?.message || response.message || "字幕获取失败"));
+          reject(new Error(response.error?.message || response.message || t("error.fetchSubtitlesFailed")));
           return;
         }
         resolve(response?.data ?? response ?? {});
       });
     });
+  }
+
+  function isBilibiliVideoShellReady() {
+    const checker = globalThis.BiliSubtitlePageShell?.isBilibiliVideoShellReady;
+    if (typeof checker !== "function") {
+      return true;
+    }
+    try {
+      return Boolean(checker(document));
+    } catch {
+      return false;
+    }
   }
 
   function parseBvidFromUrl(url = window.location.href) {
@@ -199,6 +227,10 @@
   }
 
   function createPanel() {
+    if (!isBilibiliVideoShellReady()) {
+      return false;
+    }
+
     if (document.getElementById(PANEL_ID)) {
       refs.root = document.getElementById(PANEL_ID);
       return true;
@@ -212,46 +244,48 @@
     const root = document.createElement("section");
     root.id = PANEL_ID;
     root.className = "bdsp-panel";
-    root.setAttribute("aria-label", "B站字幕列表");
+    root.setAttribute("aria-label", t("panel.aria"));
     root.style.setProperty("--bdsp-viewer-height", `${state.viewerHeight}px`);
     root.innerHTML = `
       <div class="bdsp-header">
         <div class="bdsp-title-group">
           <div class="bdsp-title-line">
-            <div class="bdsp-title">字幕列表</div>
-            <div class="bdsp-status" data-role="status">识别中</div>
+            <div class="bdsp-title" data-role="panel-title">${t("panel.title")}</div>
+            <div class="bdsp-status" data-role="status">${t("status.detecting")}</div>
           </div>
-          <div class="bdsp-video" data-role="video-meta">等待识别视频</div>
+          <div class="bdsp-video" data-role="video-meta">${t("panel.videoPending")}</div>
         </div>
-        <button class="bdsp-icon-button" type="button" data-action="collapse" aria-label="折叠字幕面板" title="折叠字幕面板">⌃</button>
+        <button class="bdsp-icon-button" type="button" data-action="collapse" aria-label="${t("panel.collapse")}" title="${t("panel.collapse")}">⌃</button>
       </div>
 
       <div class="bdsp-body">
-        <div class="bdsp-controls" aria-label="字幕控制">
-          <select class="bdsp-select" data-role="track-select" aria-label="字幕语言" disabled>
-            <option value="">暂无字幕</option>
+        <div class="bdsp-controls" data-role="controls" aria-label="${t("panel.controls")}">
+          <select class="bdsp-select" data-role="track-select" aria-label="${t("select.aria")}" disabled>
+            <option value="">${t("select.none")}</option>
           </select>
-          <input class="bdsp-search" data-role="cue-search" type="search" placeholder="搜索字幕" aria-label="搜索字幕关键词" autocomplete="off" spellcheck="false">
-          <button class="bdsp-button bdsp-button-secondary" type="button" data-action="refresh">刷新</button>
+          <input class="bdsp-search" data-role="cue-search" type="search" placeholder="${t("search.placeholder")}" aria-label="${t("search.aria")}" autocomplete="off" spellcheck="false">
+          <button class="bdsp-button bdsp-button-secondary" type="button" data-action="refresh">${t("button.refresh")}</button>
         </div>
 
         <div class="bdsp-viewer" data-role="viewer" aria-live="polite">
-          <div class="bdsp-empty">打开 B 站视频页后自动读取字幕。</div>
+          <div class="bdsp-empty">${t("empty.initial")}</div>
         </div>
 
         <div class="bdsp-actions">
-          <button class="bdsp-button" type="button" data-action="copy-subtitles" disabled>复制字幕</button>
-          <button class="bdsp-button" type="button" data-action="download-txt" disabled>下载 TXT</button>
-          <button class="bdsp-button" type="button" data-action="download-srt" disabled>下载 SRT</button>
-          <button class="bdsp-button bdsp-button-primary bdsp-button-ai" type="button" data-action="open-site" disabled>AI分析</button>
+          <button class="bdsp-button" type="button" data-action="copy-subtitles" disabled>${t("action.copySubtitles")}</button>
+          <button class="bdsp-button" type="button" data-action="download-txt" disabled>${t("action.downloadTxt")}</button>
+          <button class="bdsp-button" type="button" data-action="download-srt" disabled>${t("action.downloadSrt")}</button>
+          <button class="bdsp-button bdsp-button-primary bdsp-button-ai" type="button" data-action="open-site" disabled>${t("action.aiAnalysis")}</button>
         </div>
       </div>
-      <div class="bdsp-resizer" data-action="resize" role="separator" aria-orientation="horizontal" title="拖动调整字幕列表高度"></div>
+      <div class="bdsp-resizer" data-action="resize" role="separator" aria-orientation="horizontal" title="${t("panel.resizer")}"></div>
     `;
 
     target.container.insertBefore(root, target.before);
     refs.root = root;
     refs.body = root.querySelector(".bdsp-body");
+    refs.title = root.querySelector("[data-role='panel-title']");
+    refs.controls = root.querySelector("[data-role='controls']");
     refs.meta = root.querySelector("[data-role='video-meta']");
     refs.status = root.querySelector("[data-role='status']");
     refs.select = root.querySelector("[data-role='track-select']");
@@ -282,7 +316,8 @@
     refs.resizer.addEventListener("pointerdown", startResizeDrag);
     protectPanelInteractions(root);
     unlockPointerAncestors(root);
-    setStatus(state.status, state.statusTone);
+    applyLocalizedStaticText();
+    setStatusKey(state.statusKey, state.statusParams, state.statusTone);
     setPanelCollapsed(state.collapsed);
     return true;
   }
@@ -322,6 +357,9 @@
 
   function ensurePanelPlacement() {
     if (!refs.root) {
+      return;
+    }
+    if (!isBilibiliVideoShellReady()) {
       return;
     }
 
@@ -515,18 +553,73 @@
 
   function setStatus(message, tone = "muted") {
     state.status = message;
+    state.statusKey = "";
+    state.statusParams = {};
     state.statusTone = tone;
+    renderStatus();
+  }
+
+  function setStatusKey(key, params = {}, tone = "muted") {
+    state.statusKey = key;
+    state.statusParams = params;
+    state.status = t(key, params);
+    state.statusTone = tone;
+    renderStatus();
+  }
+
+  function renderStatus() {
     if (refs.status) {
-      refs.status.textContent = message;
-      refs.status.dataset.tone = tone;
+      refs.status.textContent = state.statusKey ? t(state.statusKey, state.statusParams) : state.status;
+      refs.status.dataset.tone = state.statusTone;
     }
+  }
+
+  function applyLocalizedStaticText() {
+    if (!refs.root) {
+      return;
+    }
+
+    refs.root.setAttribute("aria-label", t("panel.aria"));
+    if (refs.title) {
+      refs.title.textContent = t("panel.title");
+    }
+    if (refs.controls) {
+      refs.controls.setAttribute("aria-label", t("panel.controls"));
+    }
+    if (refs.select) {
+      refs.select.setAttribute("aria-label", t("select.aria"));
+    }
+    if (refs.search) {
+      refs.search.placeholder = t("search.placeholder");
+      refs.search.setAttribute("aria-label", t("search.aria"));
+    }
+    if (refs.refresh) {
+      refs.refresh.textContent = state.loadingTracks ? t("button.refreshing") : t("button.refresh");
+    }
+    if (refs.copySubtitles) {
+      refs.copySubtitles.textContent = t("action.copySubtitles");
+    }
+    if (refs.downloadTxt) {
+      refs.downloadTxt.textContent = t("action.downloadTxt");
+    }
+    if (refs.downloadSrt) {
+      refs.downloadSrt.textContent = t("action.downloadSrt");
+    }
+    if (refs.openSite) {
+      refs.openSite.textContent = t("action.aiAnalysis");
+    }
+    if (refs.resizer) {
+      refs.resizer.title = t("panel.resizer");
+    }
+    renderStatus();
+    setPanelCollapsed(state.collapsed);
   }
 
   function setBusy(isBusy) {
     state.loadingTracks = isBusy;
     if (refs.refresh) {
       refs.refresh.disabled = isBusy || !state.bvid;
-      refs.refresh.textContent = isBusy ? "刷新中" : "刷新";
+      refs.refresh.textContent = isBusy ? t("button.refreshing") : t("button.refresh");
     }
   }
 
@@ -535,7 +628,7 @@
       return;
     }
     if (!state.bvid) {
-      refs.meta.textContent = "未检测到 BV 号";
+      refs.meta.textContent = t("meta.noBv");
       refs.openSite.disabled = true;
       return;
     }
@@ -554,7 +647,7 @@
     if (!state.tracks.length) {
       const option = document.createElement("option");
       option.value = "";
-      option.textContent = "暂无字幕";
+      option.textContent = t("select.none");
       select.append(option);
       select.disabled = true;
       return;
@@ -585,27 +678,27 @@
     }
 
     if (state.loadingSubtitle) {
-      refs.viewer.innerHTML = `<div class="bdsp-empty">正在读取字幕...</div>`;
+      refs.viewer.innerHTML = `<div class="bdsp-empty">${t("empty.loadingSubtitle")}</div>`;
       return;
     }
 
     if (!state.bvid) {
-      refs.viewer.innerHTML = `<div class="bdsp-empty">当前页面不是 B 站视频页。</div>`;
+      refs.viewer.innerHTML = `<div class="bdsp-empty">${t("empty.notVideoPage")}</div>`;
       return;
     }
 
     if (!state.tracks.length) {
-      refs.viewer.innerHTML = `<div class="bdsp-empty">没有可查看的字幕。登录 B 站后可点击刷新再试。</div>`;
+      refs.viewer.innerHTML = `<div class="bdsp-empty">${t("empty.noSubtitles")}</div>`;
       return;
     }
 
     if (!state.cues.length) {
-      refs.viewer.innerHTML = `<div class="bdsp-empty">选择字幕语言后将在这里显示内容。</div>`;
+      refs.viewer.innerHTML = `<div class="bdsp-empty">${t("empty.noCues")}</div>`;
       return;
     }
 
     if (!visibleCues.length) {
-      refs.viewer.innerHTML = `<div class="bdsp-empty">没有匹配“${escapeHTML(state.searchQuery.trim())}”的字幕。</div>`;
+      refs.viewer.innerHTML = `<div class="bdsp-empty">${escapeHTML(t("empty.noMatches", { query: state.searchQuery.trim() }))}</div>`;
       return;
     }
 
@@ -615,7 +708,7 @@
       const item = document.createElement("li");
       item.className = "bdsp-cue";
       item.tabIndex = 0;
-      item.title = `双击跳转到 ${formatClock(cue.from)}`;
+      item.title = t("cue.jumpTitle", { time: formatClock(cue.from) });
       item.addEventListener("dblclick", (event) => {
         event.preventDefault();
         event.stopPropagation();
@@ -671,7 +764,7 @@
 
     const video = findCurrentVideoElement();
     if (!video) {
-      setStatus("未找到播放器", "warn");
+      setStatusKey("error.noPlayer", {}, "warn");
       return;
     }
 
@@ -681,9 +774,9 @@
       const targetTime = clamp(seconds, 0, maxTime);
       video.currentTime = targetTime;
       video.dispatchEvent(new Event("timeupdate", { bubbles: true }));
-      setStatus(`已跳转 ${formatClock(targetTime)}`, "ok");
+      setStatusKey("status.seeked", { time: formatClock(targetTime) }, "ok");
     } catch (error) {
-      setStatus(error.message || "跳转失败", "error");
+      setStatus(error.message || t("error.seekFailed"), "error");
     }
   }
 
@@ -729,7 +822,7 @@
           track.name ||
           track.title ||
           lan ||
-          `字幕 ${index + 1}`;
+          t("track.fallback", { number: index + 1 });
         const subtitleUrl = track.subtitleUrl || track.subtitle_url || track.url || "";
         return {
           id: String(track.id || track.trackId || subtitleUrl || lan || index),
@@ -807,7 +900,7 @@
     renderAll();
 
     if (!state.bvid) {
-      setStatus("未检测到 B 站视频 BV 号", "warn");
+      setStatusKey("status.noBv", {}, "warn");
       renderViewer();
       return;
     }
@@ -826,7 +919,7 @@
     }
 
     setBusy(true);
-    setStatus(force ? "正在刷新字幕列表" : "正在获取字幕列表", "muted");
+    setStatusKey(force ? "status.refreshingList" : "status.fetchingList", {}, "muted");
     state.cues = [];
     renderViewer();
 
@@ -851,7 +944,7 @@
 
       if (!state.tracks.length) {
         state.selectedTrackId = "";
-        setStatus("没有找到可用字幕", "warn");
+        setStatusKey("status.noSubtitlesFound", {}, "warn");
         applyAutoPanelVisibility(false);
         renderAll();
         return;
@@ -860,14 +953,14 @@
       const previousSelection = state.selectedTrackId;
       const hasPrevious = state.tracks.some((track) => track.id === previousSelection);
       state.selectedTrackId = hasPrevious ? previousSelection : state.tracks[0].id;
-      setStatus(`已找到 ${state.tracks.length} 条字幕`, "ok");
+      setStatusKey("status.foundSubtitleTracks", { count: state.tracks.length }, "ok");
       renderTracks();
       await loadSelectedSubtitle();
     } catch (error) {
       state.tracks = [];
       state.selectedTrackId = "";
       state.cues = [];
-      setStatus(error.message || "字幕列表获取失败", "error");
+      setStatus(error.message || t("error.fetchListFailed"), "error");
       applyAutoPanelVisibility(false);
       renderAll();
     } finally {
@@ -885,7 +978,7 @@
 
     state.loadingSubtitle = true;
     state.cues = [];
-    setStatus(`正在读取${track.label}`, "muted");
+    setStatusKey("status.loadingTrack", { label: track.label }, "muted");
     renderViewer();
 
     try {
@@ -907,14 +1000,14 @@
       });
       state.cues = normalizeCues(response);
       if (!state.cues.length) {
-        setStatus("字幕内容为空", "warn");
+        setStatusKey("status.contentEmpty", {}, "warn");
       } else {
-        setStatus(`已载入 ${state.cues.length} 行字幕`, "ok");
+        setStatusKey("status.loadedSubtitleLines", { count: state.cues.length }, "ok");
       }
       applyAutoPanelVisibility(Boolean(state.cues.length));
     } catch (error) {
       state.cues = [];
-      setStatus(error.message || "字幕内容获取失败", "error");
+      setStatus(error.message || t("error.fetchContentFailed"), "error");
       applyAutoPanelVisibility(false);
     } finally {
       state.loadingSubtitle = false;
@@ -927,12 +1020,12 @@
       return;
     }
 
-    setStatus(`正在下载 ${format.toUpperCase()}`, "muted");
+    setStatusKey("status.downloading", { format: format.toUpperCase() }, "muted");
     try {
       downloadTextFile(formatSubtitleDownload(format), makeDownloadFilename(format), mimeTypeForDownload(format));
-      setStatus(`${format.toUpperCase()} 已开始下载`, "ok");
+      setStatusKey("status.downloadStarted", { format: format.toUpperCase() }, "ok");
     } catch (error) {
-      setStatus(error.message || `${format.toUpperCase()} 下载失败`, "error");
+      setStatus(error.message || t("error.downloadFailed", { format: format.toUpperCase() }), "error");
     }
   }
 
@@ -945,9 +1038,9 @@
     const text = formatPlainTextDownload(visibleCues);
     try {
       await writeClipboardText(text);
-      setStatus(`已复制 ${visibleCues.length} 行字幕`, "ok");
+      setStatusKey("status.subtitlesCopied", { count: visibleCues.length }, "ok");
     } catch (error) {
-      setStatus(error.message || "复制字幕失败", "error");
+      setStatus(error.message || t("error.copyFailed"), "error");
     }
   }
 
@@ -968,7 +1061,7 @@
     const ok = document.execCommand("copy");
     textarea.remove();
     if (!ok) {
-      throw new Error("浏览器未允许复制");
+      throw new Error(t("error.clipboardDenied"));
     }
   }
 
@@ -1094,8 +1187,8 @@
     }
     refs.root.classList.toggle("bdsp-panel-collapsed", state.collapsed);
     refs.collapse.textContent = state.collapsed ? "⌄" : "⌃";
-    refs.collapse.setAttribute("aria-label", state.collapsed ? "展开字幕面板" : "折叠字幕面板");
-    refs.collapse.title = state.collapsed ? "展开字幕面板" : "折叠字幕面板";
+    refs.collapse.setAttribute("aria-label", state.collapsed ? t("panel.expand") : t("panel.collapse"));
+    refs.collapse.title = state.collapsed ? t("panel.expand") : t("panel.collapse");
   }
 
   function formatClock(seconds) {
@@ -1117,6 +1210,16 @@
       return;
     }
     routeTimer = window.setInterval(startOrRefresh, ROUTE_POLL_MS);
+  }
+
+  function handleLanguageChange() {
+    const nextLocale = getPreferredLocale();
+    if (nextLocale === state.locale) {
+      return;
+    }
+    state.locale = nextLocale;
+    applyLocalizedStaticText();
+    renderAll();
   }
 
   function startPlacementObserver() {
@@ -1145,6 +1248,11 @@
 
   function schedulePanelMount() {
     if (refs.root?.isConnected) {
+      return;
+    }
+    if (!isBilibiliVideoShellReady()) {
+      pendingMountTarget = null;
+      window.clearTimeout(mountDelayTimer);
       return;
     }
 
@@ -1176,6 +1284,15 @@
   }
 
   function startOrRefresh() {
+    if (!isBilibiliVideoShellReady()) {
+      if (refs.root?.isConnected) {
+        refs.root.remove();
+      }
+      pendingMountTarget = null;
+      window.clearTimeout(mountDelayTimer);
+      return;
+    }
+
     if (refs.root) {
       ensurePanelPlacement();
     } else {
@@ -1192,5 +1309,6 @@
       window.addEventListener("load", startOrRefresh, { once: true });
     }
     startRouteWatcher();
+    window.addEventListener("languagechange", handleLanguageChange);
   });
 })();

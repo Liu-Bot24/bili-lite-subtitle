@@ -258,9 +258,14 @@
 
 #bili-subtitle-lite-panel .bdsp-actions {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr) minmax(0, 1.2fr) minmax(0, 1fr);
   gap: 6px;
   align-items: center;
+}
+
+#bili-subtitle-lite-panel .bdsp-actions .bdsp-button {
+  padding: 0 4px;
+  font-size: 11px;
 }
 
 #bili-subtitle-lite-panel .bdsp-button-ai {
@@ -271,20 +276,20 @@
 }
 
 #bili-subtitle-lite-panel .bdsp-resizer {
-  height: 8px;
-  background:
-    linear-gradient(to bottom, transparent 0 3px, #dcdfe6 3px 4px, transparent 4px 100%),
-    #ffffff;
-  border-top: 1px solid #f1f2f3;
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 10px;
+  background: transparent;
+  border: 0;
   cursor: ns-resize;
   touch-action: none;
 }
 
 #bili-subtitle-lite-panel .bdsp-resizer:hover,
 #bili-subtitle-lite-panel.bdsp-panel-resizing .bdsp-resizer {
-  background:
-    linear-gradient(to bottom, transparent 0 3px, #00aeec 3px 4px, transparent 4px 100%),
-    #f6fbff;
+  background: rgba(0, 174, 236, 0.08);
 }
 
 #bili-subtitle-lite-panel.bdsp-panel-collapsed .bdsp-body,
