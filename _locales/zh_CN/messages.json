@@ -1,6 +1,6 @@
 {
   "extensionName": {
-    "message": "B站轻量字幕助手 - 查看、复制和下载字幕",
+    "message": "B站轻量字幕助手 - 查看、复制、下载和翻译字幕",
     "description": "Chrome 应用商店标题和扩展名称。"
   },
   "extensionShortName": {
@@ -8,7 +8,7 @@
     "description": "短扩展名称。"
   },
   "extensionDescription": {
-    "message": "在 B 站视频页查看、搜索、复制和下载字幕，并一键打开 AI 分析。",
+    "message": "在 B 站视频页查看、搜索、复制、下载和翻译字幕，并一键打开 AI 分析。",
     "description": "扩展短描述。"
   },
   "actionTitle": {

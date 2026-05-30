@@ -1,6 +1,6 @@
 {
   "extensionName": {
-    "message": "Bilibili Lite Subtitle Helper - View, Copy & Download Subtitles",
+    "message": "Bilibili Lite Subtitle Helper - View, Copy, Download & Translate Subtitles",
     "description": "Chrome Web Store title and extension name."
   },
   "extensionShortName": {
@@ -8,7 +8,7 @@
     "description": "Short extension name."
   },
   "extensionDescription": {
-    "message": "View, search, copy, and download Bilibili video subtitles, with one-click AI analysis.",
+    "message": "View, search, copy, download, and translate Bilibili video subtitles, with one-click AI analysis.",
     "description": "Short extension description."
   },
   "actionTitle": {

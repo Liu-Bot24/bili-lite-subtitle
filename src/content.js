@@ -15,6 +15,8 @@
   const TARGET_LANGUAGE_STORAGE_KEY = "bdsp.targetLanguage.v1";
   const OVERLAY_ENABLED_STORAGE_KEY = "bdsp.overlayEnabled.v1";
   const OVERLAY_POSITION_STORAGE_KEY = "bdsp.overlayPosition.v1";
+  const PANEL_COLLAPSED_STORAGE_KEY = "bdsp.panelCollapsed.v1";
+  const PANEL_AUTO_EXPANDED_STORAGE_KEY = "bdsp.panelAutoExpanded.v1";
   const SILICONFLOW_API_KEY_URL = "https://cloud.siliconflow.cn/i/My0p5Jgs";
   const OPENROUTER_API_KEY_URL = "https://openrouter.ai/keys";
   const DEFAULT_OVERLAY_POSITION = Object.freeze({ x: 0.5, y: 0.72 });
@@ -60,7 +62,8 @@
     statusParams: {},
     statusTone: "muted",
     collapsed: true,
-    userToggledCollapse: false,
+    hasPanelCollapsePreference: false,
+    hasAutoExpandedPanel: false,
     loadingTracks: false,
     loadingSubtitle: false,
     translating: false,
@@ -175,6 +178,8 @@
       TARGET_LANGUAGE_STORAGE_KEY,
       OVERLAY_ENABLED_STORAGE_KEY,
       OVERLAY_POSITION_STORAGE_KEY,
+      PANEL_COLLAPSED_STORAGE_KEY,
+      PANEL_AUTO_EXPANDED_STORAGE_KEY,
     ]).catch(() => ({}));
     const nextUiLocale = stored[UI_LOCALE_STORAGE_KEY] || "auto";
     uiLocaleOverride = ["auto", "zh", "en"].includes(nextUiLocale) ? nextUiLocale : "auto";
@@ -183,6 +188,11 @@
     state.targetLanguage = Translation?.normalizeTargetLanguage?.(stored[TARGET_LANGUAGE_STORAGE_KEY]) || state.targetLanguage;
     state.overlayEnabled = Boolean(stored[OVERLAY_ENABLED_STORAGE_KEY]);
     state.overlayPosition = normalizeOverlayPosition(stored[OVERLAY_POSITION_STORAGE_KEY], document.getElementById("bdsp-subtitle-overlay"));
+    state.hasPanelCollapsePreference = typeof stored[PANEL_COLLAPSED_STORAGE_KEY] === "boolean";
+    if (state.hasPanelCollapsePreference) {
+      state.collapsed = Boolean(stored[PANEL_COLLAPSED_STORAGE_KEY]);
+    }
+    state.hasAutoExpandedPanel = Boolean(stored[PANEL_AUTO_EXPANDED_STORAGE_KEY]);
     await TranslationCache?.pruneStoredTranslationCache?.().catch(() => {});
     sendMessage(MessageType.PRUNE_TRANSLATION_CACHE).catch(() => {});
     if (refs.root) {
@@ -1798,8 +1808,7 @@
     activeVideoElement = null;
     disableNativeSubtitleTrack();
     state.searchQuery = "";
-    state.userToggledCollapse = false;
-    setPanelCollapsed(true);
+    setPanelCollapsed(state.hasPanelCollapsePreference ? state.collapsed : true);
     state.lastHref = currentHref;
     renderAll();
 
@@ -2466,15 +2475,26 @@
   }
 
   function togglePanel() {
-    state.userToggledCollapse = true;
-    setPanelCollapsed(!state.collapsed);
+    const collapsed = !state.collapsed;
+    state.hasPanelCollapsePreference = true;
+    setPanelCollapsed(collapsed);
+    storageSet({ [PANEL_COLLAPSED_STORAGE_KEY]: collapsed }).catch(() => {});
   }
 
   function applyAutoPanelVisibility(hasSubtitles) {
-    if (state.userToggledCollapse) {
+    if (state.hasPanelCollapsePreference) {
       return;
     }
-    setPanelCollapsed(!hasSubtitles);
+    if (!hasSubtitles) {
+      setPanelCollapsed(true);
+      return;
+    }
+    if (state.hasAutoExpandedPanel) {
+      return;
+    }
+    state.hasAutoExpandedPanel = true;
+    setPanelCollapsed(false);
+    storageSet({ [PANEL_AUTO_EXPANDED_STORAGE_KEY]: true }).catch(() => {});
   }
 
   function setPanelCollapsed(collapsed) {

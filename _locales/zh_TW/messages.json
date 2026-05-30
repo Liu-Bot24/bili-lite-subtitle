@@ -1,6 +1,6 @@
 {
   "extensionName": {
-    "message": "Bilibili 輕量字幕助手 - 查看、複製與下載字幕",
+    "message": "Bilibili 輕量字幕助手 - 查看、複製、下載與翻譯字幕",
     "description": "Chrome 線上應用程式商店標題與擴充功能名稱。"
   },
   "extensionShortName": {
@@ -8,7 +8,7 @@
     "description": "短擴充功能名稱。"
   },
   "extensionDescription": {
-    "message": "在 Bilibili 影片頁查看、搜尋、複製與下載字幕，並一鍵開啟 AI 分析。",
+    "message": "在 Bilibili 影片頁查看、搜尋、複製、下載與翻譯字幕，並一鍵開啟 AI 分析。",
     "description": "擴充功能短描述。"
   },
   "actionTitle": {

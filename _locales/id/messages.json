@@ -1,6 +1,6 @@
 {
   "extensionName": {
-    "message": "Bilibili Lite Subtitle Helper - Lihat, Salin & Unduh Subtitle",
+    "message": "Bilibili Lite Subtitle Helper - Lihat, Salin, Unduh & Terjemahkan Subtitle",
     "description": "Judul Chrome Web Store dan nama ekstensi."
   },
   "extensionShortName": {
@@ -8,7 +8,7 @@
     "description": "Nama pendek ekstensi."
   },
   "extensionDescription": {
-    "message": "Lihat, cari, salin, dan unduh subtitle video Bilibili, serta buka analisis AI dengan sekali klik.",
+    "message": "Lihat, cari, salin, unduh, dan terjemahkan subtitle video Bilibili, serta buka analisis AI dengan sekali klik.",
     "description": "Deskripsi singkat ekstensi."
   },
   "actionTitle": {

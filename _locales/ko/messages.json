@@ -1,6 +1,6 @@
 {
   "extensionName": {
-    "message": "Bilibili Lite Subtitle Helper - 자막 보기, 복사, 다운로드",
+    "message": "Bilibili Lite Subtitle Helper - 자막 보기, 복사, 다운로드, 번역",
     "description": "Chrome 웹 스토어 제목과 확장 프로그램 이름."
   },
   "extensionShortName": {
@@ -8,7 +8,7 @@
     "description": "짧은 확장 프로그램 이름."
   },
   "extensionDescription": {
-    "message": "Bilibili 동영상 페이지에서 자막을 보고 검색, 복사, 다운로드하며 AI 분석을 바로 열 수 있습니다.",
+    "message": "Bilibili 동영상 페이지에서 자막을 보고 검색, 복사, 다운로드, 번역하며 AI 분석을 바로 열 수 있습니다.",
     "description": "짧은 확장 프로그램 설명."
   },
   "actionTitle": {

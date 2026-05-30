@@ -4,7 +4,7 @@
 
 Languages: [简体中文](./README.md) · [English](./README.en.md)
 
-This is a companion browser extension for the danmaku analysis site [danmu.liu-qi.cn](https://danmu.liu-qi.cn/). It also works as a standalone subtitle tool for viewing, searching, copying, and downloading subtitles from Bilibili videos.
+This is a companion browser extension for the danmaku analysis site [danmu.liu-qi.cn](https://danmu.liu-qi.cn/). It also works as a standalone subtitle tool for viewing, searching, copying, downloading, and translating subtitles from Bilibili videos.
 
 ## What It Is
 
@@ -19,6 +19,8 @@ You can use it on its own to download subtitles. If you also use [danmu.liu-qi.c
 - Double-click a subtitle line to jump to that playback time
 - Copy visible subtitle lines with timestamps
 - Download subtitles as TXT or SRT
+- Translate the current subtitles after configuring an OpenAI-compatible model
+- Switch between original subtitles and generated translations from the subtitle language menu
 - Open the matching AI deep analysis page
 
 ## Installation
@@ -44,8 +46,10 @@ After installation, open a Bilibili video page and use the subtitle panel on the
 1. Sign in to Bilibili and open a regular video page.
 2. Find the `字幕列表` panel on the right side of the page.
 3. Select a subtitle language, or search by keyword.
-4. Click `复制字幕`, `下载 TXT`, or `下载 SRT`.
-5. Click `AI分析` to open [danmu.liu-qi.cn](https://danmu.liu-qi.cn/) in the deep subtitle analysis view.
+4. To translate, enter Base URL, Model, and API Key in settings, then choose a target language and click `翻译为`.
+5. After translation, select the generated subtitle from the subtitle language menu.
+6. Click `复制字幕`, `下载 TXT`, or `下载 SRT`.
+7. Click `AI分析` to open [danmu.liu-qi.cn](https://danmu.liu-qi.cn/) in the deep subtitle analysis view.
 
 ## Scope
 
@@ -57,9 +61,11 @@ After installation, open a Bilibili video page and use the subtitle panel on the
 The extension only requests the permissions needed for subtitle features:
 
 - `downloads`: save subtitle files to your local downloads folder
+- `storage`: save model settings, interface language, and translation cache
 - `https://www.bilibili.com/video/*`: show the subtitle panel on Bilibili video pages
 - `https://api.bilibili.com/*`: read subtitle tracks and video information
 - `https://*.hdslb.com/*`: fetch subtitle file content
+- `https://*/*`: request the HTTPS OpenAI-compatible endpoint you configure in settings when you translate subtitles
 
 The extension does not read or upload your Bilibili cookies. See [PRIVACY.md](PRIVACY.md) for details.
 

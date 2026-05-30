@@ -1,6 +1,6 @@
 {
   "extensionName": {
-    "message": "Bilibili Lite Subtitle Helper - 字幕の表示・コピー・保存",
+    "message": "Bilibili Lite Subtitle Helper - 字幕の表示・コピー・保存・翻訳",
     "description": "Chrome ウェブストアのタイトルと拡張機能名。"
   },
   "extensionShortName": {
@@ -8,7 +8,7 @@
     "description": "短い拡張機能名。"
   },
   "extensionDescription": {
-    "message": "Bilibili動画ページで字幕を表示、検索、コピー、ダウンロードし、AI分析をすばやく開けます。",
+    "message": "Bilibili動画ページで字幕を表示、検索、コピー、ダウンロード、翻訳し、AI分析をすばやく開けます。",
     "description": "拡張機能の短い説明。"
   },
   "actionTitle": {

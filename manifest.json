@@ -28,9 +28,7 @@
     "https://www.bilibili.com/video/*",
     "https://api.bilibili.com/*",
     "https://*.hdslb.com/*",
-    "https://api.siliconflow.cn/*",
-    "https://openrouter.ai/*",
-    "https://api.openai.com/*"
+    "https://*/*"
   ],
   "background": {
     "service_worker": "src/background.js",
