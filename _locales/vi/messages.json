@@ -1,0 +1,18 @@
+{
+  "extensionName": {
+    "message": "Bilibili Lite Subtitle Helper - Xem, sao chép và tải phụ đề",
+    "description": "Tiêu đề Chrome Web Store và tên tiện ích."
+  },
+  "extensionShortName": {
+    "message": "Bilibili Subtitles",
+    "description": "Tên tiện ích rút gọn."
+  },
+  "extensionDescription": {
+    "message": "Xem, tìm kiếm, sao chép và tải phụ đề video Bilibili, đồng thời mở phân tích AI chỉ với một lần nhấp.",
+    "description": "Mô tả ngắn của tiện ích."
+  },
+  "actionTitle": {
+    "message": "Bilibili Lite Subtitle Helper",
+    "description": "Chú giải nút tiện ích."
+  }
+}

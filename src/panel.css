@@ -27,8 +27,8 @@
 #bili-subtitle-lite-panel .bdsp-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 10px;
+  justify-content: flex-start;
+  gap: 6px;
   min-height: 48px;
   padding: 8px 10px 8px 12px;
   background: #f6f7f8;
@@ -37,6 +37,7 @@
 
 #bili-subtitle-lite-panel .bdsp-title-group {
   display: grid;
+  flex: 1 1 auto;
   gap: 2px;
   min-width: 0;
 }
@@ -90,19 +91,25 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  flex: 0 0 28px;
-  width: 28px;
-  height: 28px;
+  flex: 0 0 36px;
+  width: 36px;
+  height: 36px;
   color: #61666d;
   background: #ffffff;
   border: 1px solid #dcdfe6;
-  border-radius: 7px;
+  border-radius: 8px;
   cursor: pointer;
+  font-size: 18px;
 }
 
 #bili-subtitle-lite-panel .bdsp-icon-button:hover {
   color: #18191c;
   background: #f1f2f3;
+}
+
+#bili-subtitle-lite-panel .bdsp-icon-button[data-action="settings"] {
+  font-size: 21px;
+  line-height: 1;
 }
 
 #bili-subtitle-lite-panel .bdsp-body {
@@ -115,6 +122,13 @@
 #bili-subtitle-lite-panel .bdsp-controls {
   display: grid;
   grid-template-columns: minmax(0, 0.8fr) minmax(0, 1fr) auto;
+  gap: 6px;
+  align-items: center;
+}
+
+#bili-subtitle-lite-panel .bdsp-translation-tools {
+  display: grid;
+  grid-template-columns: auto auto minmax(96px, 1fr);
   gap: 6px;
   align-items: center;
 }
@@ -134,6 +148,16 @@
 
 #bili-subtitle-lite-panel .bdsp-search {
   min-width: 0;
+}
+
+#bili-subtitle-lite-panel .bdsp-select-compact,
+#bili-subtitle-lite-panel .bdsp-button-compact {
+  height: 28px;
+  font-size: 12px;
+}
+
+#bili-subtitle-lite-panel .bdsp-button-compact {
+  padding: 0 8px;
 }
 
 #bili-subtitle-lite-panel .bdsp-search::placeholder {
@@ -182,6 +206,12 @@
   color: #ffffff;
   background: #16bdf8;
   border-color: #16bdf8;
+}
+
+#bili-subtitle-lite-panel .bdsp-button-active {
+  color: #00aeec;
+  background: #f2fbff;
+  border-color: rgba(0, 174, 236, 0.55);
 }
 
 #bili-subtitle-lite-panel .bdsp-button-secondary {
@@ -263,6 +293,190 @@
   align-items: center;
 }
 
+#bili-subtitle-lite-panel .bdsp-settings-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  align-items: start;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(3px);
+}
+
+#bili-subtitle-lite-panel .bdsp-settings-backdrop[hidden] {
+  display: none;
+}
+
+#bili-subtitle-lite-panel .bdsp-settings-dialog {
+  display: grid;
+  gap: 10px;
+  width: 100%;
+  padding: 12px;
+  color: #18191c;
+  background: #ffffff;
+  border: 1px solid #e3e5e7;
+  border-radius: 8px;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.12);
+}
+
+#bili-subtitle-lite-panel .bdsp-settings-head {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+#bili-subtitle-lite-panel .bdsp-settings-title {
+  font-size: 15px;
+  font-weight: 800;
+}
+
+#bili-subtitle-lite-panel .bdsp-settings-compat,
+#bili-subtitle-lite-panel .bdsp-field small {
+  color: #9499a0;
+  font-size: 11px;
+}
+
+#bili-subtitle-lite-panel .bdsp-field {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+#bili-subtitle-lite-panel .bdsp-field input,
+#bili-subtitle-lite-panel .bdsp-field select {
+  width: 100%;
+  height: 30px;
+  padding: 0 8px;
+  color: #18191c;
+  background: #ffffff;
+  border: 1px solid #dcdfe6;
+  border-radius: 7px;
+  font-size: 12px;
+  outline: none;
+}
+
+#bili-subtitle-lite-panel .bdsp-field input:focus,
+#bili-subtitle-lite-panel .bdsp-field select:focus {
+  border-color: #00aeec;
+  box-shadow: 0 0 0 2px rgba(0, 174, 236, 0.12);
+}
+
+#bili-subtitle-lite-panel .bdsp-field-grid,
+#bili-subtitle-lite-panel .bdsp-settings-extra,
+#bili-subtitle-lite-panel .bdsp-settings-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 8px;
+  align-items: end;
+}
+
+#bili-subtitle-lite-panel .bdsp-settings-divider {
+  height: 1px;
+  background: #edf0f2;
+}
+
+#bili-subtitle-lite-panel .bdsp-settings-actions {
+  grid-template-columns: auto auto;
+  justify-content: end;
+}
+
+#bili-subtitle-lite-panel .bdsp-field a {
+  color: #00aeec;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+#bdsp-subtitle-overlay {
+  align-items: center;
+  position: fixed;
+  left: 50%;
+  top: 72vh;
+  z-index: 2147483647;
+  display: flex;
+  justify-content: center;
+  box-sizing: border-box;
+  width: min(74vw, 920px);
+  min-height: 54px;
+  transform: translate(-50%, -50%);
+  padding: 8px 14px 10px;
+  color: #ffffff;
+  background: rgba(18, 18, 20, 0.78);
+  border-radius: 6px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-size: 26px;
+  line-height: 1.28;
+  text-align: center;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.75);
+  white-space: pre-wrap;
+  pointer-events: auto;
+  user-select: none;
+  cursor: grab;
+  transition: background-color 120ms ease, opacity 120ms ease;
+}
+
+#bdsp-subtitle-overlay.bdsp-overlay-fullscreen-mounted {
+  position: absolute;
+  width: min(72%, 920px);
+  max-width: calc(100% - 32px);
+}
+
+#bdsp-subtitle-overlay[hidden] {
+  display: none;
+}
+
+#bdsp-subtitle-overlay:hover,
+#bdsp-subtitle-overlay.bdsp-overlay-dragging {
+  background: rgba(18, 18, 20, 0.86);
+}
+
+#bdsp-subtitle-overlay.bdsp-overlay-dragging {
+  cursor: grabbing;
+}
+
+#bdsp-subtitle-overlay[data-drag-hold="true"] {
+  opacity: 0.82;
+}
+
+#bdsp-subtitle-overlay [data-role="overlay-text"] {
+  display: block;
+  flex: 1 1 auto;
+  max-width: 100%;
+  min-width: 0;
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+
+#bdsp-subtitle-overlay .bdsp-overlay-drag-handle {
+  position: absolute;
+  top: -20px;
+  right: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 20px;
+  opacity: 0;
+  cursor: move;
+  transition: opacity 120ms ease;
+}
+
+#bdsp-subtitle-overlay:hover .bdsp-overlay-drag-handle,
+#bdsp-subtitle-overlay.bdsp-overlay-dragging .bdsp-overlay-drag-handle {
+  opacity: 1;
+}
+
+#bdsp-subtitle-overlay .bdsp-overlay-drag-handle span {
+  width: 42px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.86);
+  border-radius: 999px;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.35);
+}
+
 #bili-subtitle-lite-panel .bdsp-actions .bdsp-button {
   padding: 0 4px;
   font-size: 11px;
@@ -323,12 +537,23 @@
     grid-template-columns: 1fr;
   }
 
+  #bili-subtitle-lite-panel .bdsp-translation-tools,
   #bili-subtitle-lite-panel .bdsp-controls {
+    grid-template-columns: 1fr;
+  }
+
+  #bili-subtitle-lite-panel .bdsp-field-grid,
+  #bili-subtitle-lite-panel .bdsp-settings-extra {
     grid-template-columns: 1fr;
   }
 
   #bili-subtitle-lite-panel .bdsp-viewer {
     min-height: 150px;
     max-height: 46vh;
+  }
+
+  #bdsp-subtitle-overlay {
+    width: calc(100vw - 24px);
+    font-size: 20px;
   }
 }

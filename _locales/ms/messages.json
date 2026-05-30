@@ -1,0 +1,18 @@
+{
+  "extensionName": {
+    "message": "Bilibili Lite Subtitle Helper - Lihat, Salin & Muat Turun Sari Kata",
+    "description": "Tajuk Chrome Web Store dan nama sambungan."
+  },
+  "extensionShortName": {
+    "message": "Bilibili Subtitles",
+    "description": "Nama pendek sambungan."
+  },
+  "extensionDescription": {
+    "message": "Lihat, cari, salin dan muat turun sari kata video Bilibili, serta buka analisis AI dengan satu klik.",
+    "description": "Penerangan ringkas sambungan."
+  },
+  "actionTitle": {
+    "message": "Bilibili Lite Subtitle Helper",
+    "description": "Petua butang sambungan."
+  }
+}

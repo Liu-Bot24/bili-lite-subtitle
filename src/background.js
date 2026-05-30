@@ -1,7 +1,20 @@
 import "./bilibili-api.js";
+import "./translation-core.js";
+import "./translation-cache.js";
 
 const Api = globalThis.BilibiliSubtitleApi;
-const MESSAGE_TYPES = new Set(["GET_VIDEO_SUBTITLES", "DOWNLOAD_SUBTITLE", "OPEN_SITE_RESULT"]);
+const Translation = globalThis.BiliSubtitleTranslationCore;
+const TranslationCache = globalThis.BiliSubtitleTranslationCache;
+const LLM_CONFIG_STORAGE_KEY = "bdsp.llmConfig.v1";
+const TRANSLATION_BATCH_SIZE = 25;
+const TRANSLATION_BATCH_WORKERS = 12;
+const MESSAGE_TYPES = new Set([
+  "GET_VIDEO_SUBTITLES",
+  "DOWNLOAD_SUBTITLE",
+  "OPEN_SITE_RESULT",
+  "TRANSLATE_SUBTITLE",
+  "PRUNE_TRANSLATION_CACHE",
+]);
 const MESSAGE_ALIASES = {
   BILI_SUBTITLE_GET_TRACKS: "GET_VIDEO_SUBTITLES",
   BILI_SUBTITLE_FETCH: "DOWNLOAD_SUBTITLE",
@@ -10,6 +23,16 @@ const MESSAGE_ALIASES = {
 if (!Api) {
   throw new Error("BilibiliSubtitleApi is not loaded");
 }
+if (!Translation) {
+  throw new Error("BiliSubtitleTranslationCore is not loaded");
+}
+
+chrome.runtime.onStartup?.addListener(() => {
+  TranslationCache?.pruneStoredTranslationCache?.().catch(() => {});
+});
+chrome.runtime.onInstalled?.addListener(() => {
+  TranslationCache?.pruneStoredTranslationCache?.().catch(() => {});
+});
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   handleMessage(message || {}, sender)
@@ -37,6 +60,18 @@ async function handleMessage(message, sender) {
 
   if (normalizedMessage.type === "DOWNLOAD_SUBTITLE") {
     return handleDownloadSubtitle(normalizedMessage, sender);
+  }
+
+  if (normalizedMessage.type === "TRANSLATE_SUBTITLE") {
+    return handleTranslateSubtitle(normalizedMessage, sender);
+  }
+
+  if (normalizedMessage.type === "PRUNE_TRANSLATION_CACHE") {
+    const deletedCount = await TranslationCache.pruneStoredTranslationCache();
+    return {
+      type: "PRUNE_TRANSLATION_CACHE_RESULT",
+      deletedCount,
+    };
   }
 
   return handleOpenSiteResult(normalizedMessage, sender);
@@ -190,6 +225,136 @@ async function handleOpenSiteResult(message, sender) {
   };
 }
 
+async function handleTranslateSubtitle(message, sender) {
+  const llmConfig = Translation.validateLlmConfig(await readLlmConfig());
+  const targetLanguage = Translation.normalizeTargetLanguage(message.targetLanguage);
+  const sourceCues = normalizeMessageCues(message.cues);
+  if (!sourceCues.length) {
+    throw new Api.BilibiliApiError("No subtitle content is available for translation", {
+      code: "NO_TRANSLATABLE_CUES",
+    });
+  }
+
+  const metadata = {
+    bvid: message.bvid || "",
+    title: message.title || "",
+    pageUrl: message.pageUrl || "",
+  };
+  const reportProgress = createTranslationProgressReporter(sender, message.requestId, targetLanguage);
+  const translatedCues = await Translation.translateCuesWithRetry(sourceCues, {
+    targetLanguage,
+    metadata,
+    batchSize: TRANSLATION_BATCH_SIZE,
+    batchWorkers: TRANSLATION_BATCH_WORKERS,
+    maxRetries: 2,
+    maxSplitDepth: 4,
+    onProgress: reportProgress,
+    requestItems: (segments) => requestLlmTranslationItems(segments, targetLanguage, metadata, llmConfig),
+  });
+
+  return {
+    type: "TRANSLATE_SUBTITLE_RESULT",
+    targetLanguage,
+    targetLanguageName: Translation.targetLanguageNativeName(targetLanguage),
+    cues: translatedCues,
+    failures: Translation.translationFailures(translatedCues),
+  };
+}
+
+async function requestLlmTranslationItems(segments, targetLanguage, metadata, llmConfig) {
+  const messages = Translation.buildTranslationMessages(segments, targetLanguage, metadata);
+  const content = await requestOpenAiCompatibleChat(llmConfig, messages, { useJsonResponseFormat: true })
+    .catch(async (error) => {
+      if (isResponseFormatUnsupportedError(error)) {
+        return requestOpenAiCompatibleChat(llmConfig, messages, { useJsonResponseFormat: false });
+      }
+      throw error;
+    });
+  return Translation.parseTranslationItems(content);
+}
+
+function createTranslationProgressReporter(sender, requestId, targetLanguage) {
+  const tabId = sender?.tab?.id;
+  if (!Number.isInteger(tabId) || !chrome.tabs?.sendMessage) {
+    return () => {};
+  }
+  return (progress) => {
+    chrome.tabs.sendMessage(
+      tabId,
+      {
+        type: "TRANSLATE_SUBTITLE_PROGRESS",
+        requestId: String(requestId || ""),
+        targetLanguage,
+        ...progress,
+      },
+      () => {
+        void chrome.runtime?.lastError;
+      },
+    );
+  };
+}
+
+async function requestOpenAiCompatibleChat(config, messages, options = {}) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 90_000);
+  const body = {
+    model: config.model,
+    messages,
+    temperature: 0.1,
+  };
+  if (options.useJsonResponseFormat) {
+    body.response_format = { type: "json_object" };
+  }
+
+  try {
+    const response = await fetch(config.baseUrl, {
+      method: "POST",
+      signal: controller.signal,
+      headers: {
+        Authorization: `Bearer ${config.apiKey}`,
+        "content-type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(payload.error?.message || payload.message || `Translation model returned HTTP ${response.status}`);
+    }
+    const content = payload.choices?.[0]?.message?.content || "";
+    if (!content) {
+      throw new Error("Translation model returned an empty response.");
+    }
+    return content;
+  } catch (error) {
+    if (controller.signal.aborted) {
+      throw new Error("Translation model request timed out.");
+    }
+    throw error;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function isResponseFormatUnsupportedError(error) {
+  const message = String(error?.message || error || "").toLowerCase();
+  return /response_format/.test(message) && /(unsupported|not supported|unknown|unrecognized|invalid|不支持|未知|无效)/.test(message);
+}
+
+async function readLlmConfig() {
+  const stored = await chromeStorageGet(LLM_CONFIG_STORAGE_KEY);
+  return stored?.[LLM_CONFIG_STORAGE_KEY] || {};
+}
+
+function normalizeMessageCues(cues) {
+  return (Array.isArray(cues) ? cues : [])
+    .map((cue) => ({
+      from: Number(cue.from ?? cue.start) || 0,
+      to: Number(cue.to ?? cue.end) || 0,
+      content: String(cue.content ?? cue.text ?? "").trim(),
+    }))
+    .filter((cue) => cue.content);
+}
+
 async function resolveVideoUrl(message, sender, options = {}) {
   if (message.videoUrl) return message.videoUrl;
   if (message.currentUrl) return message.currentUrl;
@@ -254,6 +419,23 @@ function getDirectSubtitleUrl(message) {
   if (directUrl) return directUrl;
   if (!message.url || Api.extractBvid(message.url)) return "";
   return message.url;
+}
+
+function chromeStorageGet(key) {
+  return new Promise((resolve, reject) => {
+    if (!chrome.storage?.local?.get) {
+      resolve({});
+      return;
+    }
+    chrome.storage.local.get(key, (result) => {
+      const lastError = chrome.runtime && chrome.runtime.lastError;
+      if (lastError) {
+        reject(new Error(lastError.message || "Unable to read extension storage."));
+      } else {
+        resolve(result || {});
+      }
+    });
+  });
 }
 
 function chromePromise(fn, ...args) {

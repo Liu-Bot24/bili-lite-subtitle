@@ -2,3 +2,8 @@
 *.zip
 *.crx
 Thumbs.db
+DEVELOPMENT_LOG.md
+tests/
+
+# Local Chrome Web Store drafts, packages, and release-only snapshots.
+chrome-web-store/

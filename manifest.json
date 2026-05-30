@@ -1,8 +1,9 @@
 {
   "manifest_version": 3,
   "name": "__MSG_extensionName__",
-  "version": "1.0.3",
-  "default_locale": "zh_CN",
+  "short_name": "__MSG_extensionShortName__",
+  "version": "1.0.4",
+  "default_locale": "en",
   "description": "__MSG_extensionDescription__",
   "icons": {
     "16": "icons/icon16.png",
@@ -11,7 +12,7 @@
     "128": "icons/icon128.png"
   },
   "action": {
-    "default_title": "__MSG_extensionName__",
+    "default_title": "__MSG_actionTitle__",
     "default_icon": {
       "16": "icons/icon16.png",
       "32": "icons/icon32.png",
@@ -20,12 +21,16 @@
     }
   },
   "permissions": [
-    "downloads"
+    "downloads",
+    "storage"
   ],
   "host_permissions": [
     "https://www.bilibili.com/video/*",
     "https://api.bilibili.com/*",
-    "https://*.hdslb.com/*"
+    "https://*.hdslb.com/*",
+    "https://api.siliconflow.cn/*",
+    "https://openrouter.ai/*",
+    "https://api.openai.com/*"
   ],
   "background": {
     "service_worker": "src/background.js",
@@ -38,6 +43,8 @@
       ],
       "js": [
         "src/i18n.js",
+        "src/translation-core.js",
+        "src/translation-cache.js",
         "src/bilibili-page-shell.js",
         "src/content.js"
       ],

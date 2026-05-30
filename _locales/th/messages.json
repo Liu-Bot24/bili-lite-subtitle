@@ -1,0 +1,18 @@
+{
+  "extensionName": {
+    "message": "Bilibili Lite Subtitle Helper - ดู คัดลอก และดาวน์โหลดซับไตเติล",
+    "description": "ชื่อส่วนขยายและชื่อใน Chrome Web Store"
+  },
+  "extensionShortName": {
+    "message": "Bilibili Subtitles",
+    "description": "ชื่อส่วนขยายแบบสั้น"
+  },
+  "extensionDescription": {
+    "message": "ดู ค้นหา คัดลอก และดาวน์โหลดซับไตเติลวิดีโอ Bilibili พร้อมเปิดการวิเคราะห์ AI ได้ในคลิกเดียว",
+    "description": "คำอธิบายส่วนขยายแบบสั้น"
+  },
+  "actionTitle": {
+    "message": "Bilibili Lite Subtitle Helper",
+    "description": "ข้อความกำกับปุ่มส่วนขยาย"
+  }
+}
