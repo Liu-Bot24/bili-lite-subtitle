@@ -145,7 +145,7 @@
       "settings.open": "设置",
       "settings.save": "保存",
       "settings.title": "模型配置",
-      "settings.uiLanguage": "Interface language",
+      "settings.uiLanguage": "界面语言",
       "settings.uiLanguageAuto": "跟随浏览器",
       "status.contentEmpty": "字幕内容为空",
       "status.cacheCleared": "字幕缓存已清理",

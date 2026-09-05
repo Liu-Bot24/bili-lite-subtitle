@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bili Lite Subtitle — Settings</title>
+  <link rel="icon" href="icons/icon32.png">
+  <link rel="stylesheet" href="src/options.css">
+  <script src="src/i18n.js" defer></script>
+  <script src="src/translation-cache.js" defer></script>
+  <script src="src/options.js" defer></script>
+</head>
+<body>
+  <main>
+    <header><img src="icons/icon48.png" width="40" height="40" alt=""><span>Bili Lite Subtitle</span></header>
+    <h1 data-i18n="settings.title">Model Settings</h1>
+    <p class="intro" data-i18n="settings.compat">OpenAI Chat Completions compatible</p>
+    <form id="settings-form" autocomplete="off">
+      <fieldset id="settings-fields" disabled>
+        <label for="base-url">Base URL</label>
+        <input id="base-url" name="bdsp-api-endpoint" type="url" spellcheck="false" placeholder="https://api.siliconflow.cn/v1/chat/completions" aria-describedby="base-url-hint">
+        <small id="base-url-hint" data-i18n="settings.baseUrlExample"></small>
+        <label for="model">Model</label>
+        <input id="model" name="bdsp-model" type="text" spellcheck="false">
+        <div class="key-label"><label for="api-key">API Key</label><a id="api-key-link" target="_blank" rel="noopener noreferrer" data-i18n="settings.getApiKey"></a></div>
+        <input id="api-key" name="bdsp-api-key" type="password" placeholder="sk-..." spellcheck="false" autocomplete="off">
+        <hr>
+        <label for="ui-locale" data-i18n="settings.uiLanguage">Interface language</label>
+        <select id="ui-locale" name="bdsp-ui-language">
+          <option value="auto" data-i18n="settings.uiLanguageAuto">Follow browser</option>
+          <option value="zh">中文</option>
+          <option value="en">English</option>
+        </select>
+        <div class="actions">
+          <button id="clear-cache" type="button" data-i18n="settings.clearCache">Clear subtitle cache</button>
+          <button class="primary" type="submit" data-i18n="settings.save">Save</button>
+        </div>
+      </fieldset>
+    </form>
+    <p id="status" role="status" aria-live="polite"></p>
+  </main>
+</body>
+</html>

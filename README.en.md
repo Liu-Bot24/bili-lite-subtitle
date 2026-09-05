@@ -48,7 +48,7 @@ After installation, open a Bilibili video page and use the subtitle panel on the
 1. Sign in to Bilibili and open a regular video page.
 2. Find the `字幕列表` panel on the right side of the page.
 3. Select a subtitle language, or search by keyword.
-4. To translate, enter Base URL, Model, and API Key in settings, then choose a target language and click `翻译为`.
+4. To translate, click the gear to open the extension settings page, save your Base URL, Model, and API Key, return to the video, then choose a target language and click `翻译为`.
 5. After translation, select the generated subtitle from the subtitle language menu.
 6. Click `复制字幕`, `下载 TXT`, or `下载 SRT`.
 7. Click `AI分析` to open [danmu.liu-qi.cn](https://danmu.liu-qi.cn/) in the deep subtitle analysis view.

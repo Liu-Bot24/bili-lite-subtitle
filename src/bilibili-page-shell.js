@@ -14,6 +14,12 @@
       return false;
     }
 
+    // Vue 2 removes this marker when hydrating the server DOM. Inserting a
+    // sibling before that handoff makes hydration fall back to rebuilding it.
+    if (videoContainer.closest("[data-server-rendered]") || danmakuBox.closest("[data-server-rendered]")) {
+      return false;
+    }
+
     return isMainHeaderReady(documentRef);
   }
 
@@ -25,7 +31,7 @@
     }
 
     const header = documentRef.querySelector(".bili-header, .mini-header, .bili-header__bar, .left-entry");
-    return header ? HEADER_TEXT_RE.test(getElementText(header)) : true;
+    return Boolean(header && hasChildElements(header) && HEADER_TEXT_RE.test(getElementText(header)));
   }
 
   function getElementText(element) {

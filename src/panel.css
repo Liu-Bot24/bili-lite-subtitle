@@ -293,103 +293,6 @@
   align-items: center;
 }
 
-#bili-subtitle-lite-panel .bdsp-settings-backdrop {
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  display: grid;
-  align-items: start;
-  padding: 10px;
-  background: rgba(255, 255, 255, 0.82);
-  backdrop-filter: blur(3px);
-}
-
-#bili-subtitle-lite-panel .bdsp-settings-backdrop[hidden] {
-  display: none;
-}
-
-#bili-subtitle-lite-panel .bdsp-settings-dialog {
-  display: grid;
-  gap: 10px;
-  width: 100%;
-  padding: 12px;
-  color: #18191c;
-  background: #ffffff;
-  border: 1px solid #e3e5e7;
-  border-radius: 8px;
-  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.12);
-}
-
-#bili-subtitle-lite-panel .bdsp-settings-head {
-  display: flex;
-  align-items: start;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-#bili-subtitle-lite-panel .bdsp-settings-title {
-  font-size: 15px;
-  font-weight: 800;
-}
-
-#bili-subtitle-lite-panel .bdsp-settings-compat,
-#bili-subtitle-lite-panel .bdsp-field small {
-  color: #9499a0;
-  font-size: 11px;
-}
-
-#bili-subtitle-lite-panel .bdsp-field {
-  display: grid;
-  gap: 5px;
-  min-width: 0;
-  font-size: 12px;
-  font-weight: 700;
-}
-
-#bili-subtitle-lite-panel .bdsp-field input,
-#bili-subtitle-lite-panel .bdsp-field select {
-  width: 100%;
-  height: 30px;
-  padding: 0 8px;
-  color: #18191c;
-  background: #ffffff;
-  border: 1px solid #dcdfe6;
-  border-radius: 7px;
-  font-size: 12px;
-  outline: none;
-}
-
-#bili-subtitle-lite-panel .bdsp-field input:focus,
-#bili-subtitle-lite-panel .bdsp-field select:focus {
-  border-color: #00aeec;
-  box-shadow: 0 0 0 2px rgba(0, 174, 236, 0.12);
-}
-
-#bili-subtitle-lite-panel .bdsp-field-grid,
-#bili-subtitle-lite-panel .bdsp-settings-extra,
-#bili-subtitle-lite-panel .bdsp-settings-actions {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 8px;
-  align-items: end;
-}
-
-#bili-subtitle-lite-panel .bdsp-settings-divider {
-  height: 1px;
-  background: #edf0f2;
-}
-
-#bili-subtitle-lite-panel .bdsp-settings-actions {
-  grid-template-columns: auto auto;
-  justify-content: end;
-}
-
-#bili-subtitle-lite-panel .bdsp-field a {
-  color: #00aeec;
-  font-weight: 800;
-  text-decoration: none;
-}
-
 #bdsp-subtitle-overlay {
   align-items: center;
   position: fixed;
@@ -539,11 +442,6 @@
 
   #bili-subtitle-lite-panel .bdsp-translation-tools,
   #bili-subtitle-lite-panel .bdsp-controls {
-    grid-template-columns: 1fr;
-  }
-
-  #bili-subtitle-lite-panel .bdsp-field-grid,
-  #bili-subtitle-lite-panel .bdsp-settings-extra {
     grid-template-columns: 1fr;
   }
 

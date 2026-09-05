@@ -9,6 +9,8 @@ const LLM_CONFIG_STORAGE_KEY = "bdsp.llmConfig.v1";
 const TRANSLATION_BATCH_SIZE = 25;
 const TRANSLATION_BATCH_WORKERS = 12;
 const MESSAGE_TYPES = new Set([
+  "OPEN_SETTINGS",
+  "GET_SETTINGS_STATUS",
   "GET_VIDEO_SUBTITLES",
   "DOWNLOAD_SUBTITLE",
   "OPEN_SITE_RESULT",
@@ -52,6 +54,23 @@ async function handleMessage(message, sender) {
       code: "UNSUPPORTED_MESSAGE",
       details: { type: message && message.type },
     });
+  }
+
+  if (normalizedMessage.type === "OPEN_SETTINGS") {
+    await chrome.runtime.openOptionsPage();
+    return { type: "OPEN_SETTINGS_RESULT" };
+  }
+
+  if (normalizedMessage.type === "GET_SETTINGS_STATUS") {
+    const config = await readLlmConfig();
+    let configured = false;
+    try {
+      Translation.validateLlmConfig(config);
+      configured = true;
+    } catch {
+      // Incomplete or invalid saved settings are an expected user state.
+    }
+    return { type: "GET_SETTINGS_STATUS_RESULT", configured };
   }
 
   if (normalizedMessage.type === "GET_VIDEO_SUBTITLES") {

@@ -4,27 +4,24 @@
   const PANEL_ID = "bili-subtitle-lite-panel";
   const SITE_RESULT_URL = "https://danmu.liu-qi.cn/result";
   const ROUTE_POLL_MS = 1200;
-  const PLACEMENT_RETRY_MS = 250;
   const LOAD_TRACKS_DELAY_MS = 400;
-  const PANEL_MOUNT_DELAY_MS = 1800;
   const DEFAULT_VIEWER_HEIGHT = 360;
   const MIN_VIEWER_HEIGHT = 180;
   const MAX_VIEWER_HEIGHT = 680;
-  const LLM_CONFIG_STORAGE_KEY = "bdsp.llmConfig.v1";
   const UI_LOCALE_STORAGE_KEY = "bdsp.uiLocale.v1";
   const TARGET_LANGUAGE_STORAGE_KEY = "bdsp.targetLanguage.v1";
   const OVERLAY_ENABLED_STORAGE_KEY = "bdsp.overlayEnabled.v1";
   const OVERLAY_POSITION_STORAGE_KEY = "bdsp.overlayPosition.v1";
   const PANEL_COLLAPSED_STORAGE_KEY = "bdsp.panelCollapsed.v1";
   const PANEL_AUTO_EXPANDED_STORAGE_KEY = "bdsp.panelAutoExpanded.v1";
-  const SILICONFLOW_API_KEY_URL = "https://cloud.siliconflow.cn/i/My0p5Jgs";
-  const OPENROUTER_API_KEY_URL = "https://openrouter.ai/keys";
   const DEFAULT_OVERLAY_POSITION = Object.freeze({ x: 0.5, y: 0.72 });
   const MIN_OVERLAY_POSITION_RATIO = 0.04;
   const MAX_OVERLAY_POSITION_RATIO = 0.96;
   const OVERLAY_POSITION_SAVE_DELAY_MS = 120;
 
   const MessageType = Object.freeze({
+    OPEN_SETTINGS: "OPEN_SETTINGS",
+    GET_SETTINGS_STATUS: "GET_SETTINGS_STATUS",
     GET_SUBTITLES: "GET_VIDEO_SUBTITLES",
     DOWNLOAD_SUBTITLE: "DOWNLOAD_SUBTITLE",
     OPEN_SITE_RESULT: "OPEN_SITE_RESULT",
@@ -70,11 +67,7 @@
     overlayEnabled: false,
     overlayPosition: { ...DEFAULT_OVERLAY_POSITION },
     targetLanguage: getDefaultTargetLanguage(),
-    llmConfig: {
-      baseUrl: "",
-      model: "",
-      apiKey: "",
-    },
+
     lastHref: "",
     viewerHeight: DEFAULT_VIEWER_HEIGHT,
     loadTracksTimer: 0,
@@ -86,9 +79,6 @@
   const refs = {};
   let routeTimer = 0;
   let placementObserver = null;
-  let placementRetryTimer = 0;
-  let mountDelayTimer = 0;
-  let pendingMountTarget = null;
   let parsedInitialState = null;
   let overlayDragState = null;
   let overlayPositionSaveTimer = 0;
@@ -173,7 +163,6 @@
 
   async function loadPersistedSettings() {
     const stored = await storageGet([
-      LLM_CONFIG_STORAGE_KEY,
       UI_LOCALE_STORAGE_KEY,
       TARGET_LANGUAGE_STORAGE_KEY,
       OVERLAY_ENABLED_STORAGE_KEY,
@@ -184,7 +173,6 @@
     const nextUiLocale = stored[UI_LOCALE_STORAGE_KEY] || "auto";
     uiLocaleOverride = ["auto", "zh", "en"].includes(nextUiLocale) ? nextUiLocale : "auto";
     state.locale = getPreferredLocale();
-    state.llmConfig = normalizeStoredLlmConfig(stored[LLM_CONFIG_STORAGE_KEY]);
     state.targetLanguage = Translation?.normalizeTargetLanguage?.(stored[TARGET_LANGUAGE_STORAGE_KEY]) || state.targetLanguage;
     state.overlayEnabled = Boolean(stored[OVERLAY_ENABLED_STORAGE_KEY]);
     state.overlayPosition = normalizeOverlayPosition(stored[OVERLAY_POSITION_STORAGE_KEY], document.getElementById("bdsp-subtitle-overlay"));
@@ -197,18 +185,9 @@
     sendMessage(MessageType.PRUNE_TRANSLATION_CACHE).catch(() => {});
     if (refs.root) {
       applyLocalizedStaticText();
-      updateSettingsForm();
       renderAll();
       updateSubtitleOverlayState();
     }
-  }
-
-  function normalizeStoredLlmConfig(config = {}) {
-    return {
-      baseUrl: String(config.baseUrl || "").trim(),
-      model: String(config.model || "").trim(),
-      apiKey: String(config.apiKey || "").trim(),
-    };
   }
 
   function storageGet(keys) {
@@ -247,14 +226,10 @@
     });
   }
 
-  function apiKeyHelpUrl() {
-    return state.locale === "zh" ? SILICONFLOW_API_KEY_URL : OPENROUTER_API_KEY_URL;
-  }
-
   function isBilibiliVideoShellReady() {
     const checker = globalThis.BiliSubtitlePageShell?.isBilibiliVideoShellReady;
     if (typeof checker !== "function") {
-      return true;
+      return false;
     }
     try {
       return Boolean(checker(document));
@@ -382,7 +357,7 @@
   }
 
   function createPanel() {
-    if (!isBilibiliVideoShellReady()) {
+    if (!getPanelMountTarget()) {
       return false;
     }
 
@@ -425,7 +400,7 @@
           <select class="bdsp-select" data-role="track-select" aria-label="${t("select.aria")}" disabled>
             <option value="">${t("select.none")}</option>
           </select>
-          <input class="bdsp-search" data-role="cue-search" name="bdsp-cue-search-local" type="search" placeholder="${t("search.placeholder")}" aria-label="${t("search.aria")}" aria-autocomplete="none" autocomplete="new-password" autocapitalize="off" autocorrect="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true">
+          <input class="bdsp-search" data-role="cue-search" name="bdsp-cue-search-local" type="search" placeholder="${t("search.placeholder")}" aria-label="${t("search.aria")}" aria-autocomplete="none" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true">
           <button class="bdsp-button bdsp-button-secondary" type="button" data-action="refresh">${t("button.refresh")}</button>
         </div>
 
@@ -438,48 +413,6 @@
           <button class="bdsp-button" type="button" data-action="download-txt" disabled>${t("action.downloadTxt")}</button>
           <button class="bdsp-button" type="button" data-action="download-srt" disabled>${t("action.downloadSrt")}</button>
           <button class="bdsp-button bdsp-button-primary bdsp-button-ai" type="button" data-action="open-site" disabled>${t("action.aiAnalysis")}</button>
-        </div>
-      </div>
-      <div class="bdsp-settings-backdrop" data-role="settings-modal" hidden>
-        <div class="bdsp-settings-dialog" role="dialog" aria-modal="true" aria-labelledby="bdsp-settings-title">
-          <div class="bdsp-settings-head">
-            <div>
-              <div class="bdsp-settings-title" id="bdsp-settings-title">${t("settings.title")}</div>
-              <div class="bdsp-settings-compat">${t("settings.compat")}</div>
-            </div>
-            <button class="bdsp-icon-button" type="button" data-action="close-settings" aria-label="${t("settings.close")}" title="${t("settings.close")}">×</button>
-          </div>
-          <label class="bdsp-field">
-            <span>Base URL</span>
-            <input data-role="llm-base-url" type="url" placeholder="https://api.siliconflow.cn/v1/chat/completions" spellcheck="false">
-            <small>${t("settings.baseUrlExample")}</small>
-          </label>
-          <div class="bdsp-field-grid">
-            <label class="bdsp-field">
-              <span>Model</span>
-              <input data-role="llm-model" type="text" placeholder="${t("settings.modelPlaceholder")}" spellcheck="false">
-            </label>
-            <label class="bdsp-field">
-              <span>API Key <a data-role="api-key-link" href="${apiKeyHelpUrl()}" target="_blank" rel="noopener noreferrer">${t("settings.getApiKey")}</a></span>
-              <input data-role="llm-api-key" type="password" placeholder="sk-..." spellcheck="false" autocomplete="off">
-            </label>
-          </div>
-          <div class="bdsp-settings-divider"></div>
-          <div class="bdsp-settings-extra">
-            <label class="bdsp-field">
-              <span>${t("settings.uiLanguage")}</span>
-              <select data-role="ui-locale">
-                <option value="auto">${t("settings.uiLanguageAuto")}</option>
-                <option value="zh">中文</option>
-                <option value="en">English</option>
-              </select>
-            </label>
-            <button class="bdsp-button" type="button" data-action="clear-cache">${t("settings.clearCache")}</button>
-          </div>
-          <div class="bdsp-settings-actions">
-            <button class="bdsp-button" type="button" data-action="close-settings">${t("settings.cancel")}</button>
-            <button class="bdsp-button bdsp-button-primary" type="button" data-action="save-settings">${t("settings.save")}</button>
-          </div>
         </div>
       </div>
       <div class="bdsp-resizer" data-action="resize" role="separator" aria-orientation="horizontal" title="${t("panel.resizer")}"></div>
@@ -499,15 +432,6 @@
     refs.viewer = root.querySelector("[data-role='viewer']");
     refs.refresh = root.querySelector("[data-action='refresh']");
     refs.settings = root.querySelector("[data-action='settings']");
-    refs.settingsModal = root.querySelector("[data-role='settings-modal']");
-    refs.closeSettings = root.querySelectorAll("[data-action='close-settings']");
-    refs.saveSettings = root.querySelector("[data-action='save-settings']");
-    refs.clearCache = root.querySelector("[data-action='clear-cache']");
-    refs.llmBaseUrl = root.querySelector("[data-role='llm-base-url']");
-    refs.llmModel = root.querySelector("[data-role='llm-model']");
-    refs.llmApiKey = root.querySelector("[data-role='llm-api-key']");
-    refs.uiLocale = root.querySelector("[data-role='ui-locale']");
-    refs.apiKeyLink = root.querySelector("[data-role='api-key-link']");
     refs.toggleOverlay = root.querySelector("[data-action='toggle-overlay']");
     refs.translateCurrent = root.querySelector("[data-action='translate-current']");
     refs.copySubtitles = root.querySelector("[data-action='copy-subtitles']");
@@ -530,10 +454,7 @@
       storageSet({ [TARGET_LANGUAGE_STORAGE_KEY]: state.targetLanguage }).catch(() => {});
     });
     refs.refresh.addEventListener("click", () => loadTracks({ force: true }));
-    refs.settings.addEventListener("click", openSettingsModal);
-    refs.closeSettings.forEach((button) => button.addEventListener("click", closeSettingsModal));
-    refs.saveSettings.addEventListener("click", saveSettingsFromModal);
-    refs.clearCache.addEventListener("click", clearTranslationCacheFromModal);
+    refs.settings.addEventListener("click", openSettings);
     refs.toggleOverlay.addEventListener("click", toggleSubtitleOverlay);
     refs.translateCurrent.addEventListener("click", translateCurrentSubtitle);
     refs.copySubtitles.addEventListener("click", copyCurrentSubtitles);
@@ -545,7 +466,6 @@
     protectPanelInteractions(root);
     renderTargetLanguageOptions();
     updateTranslationControls();
-    updateSettingsForm();
     applyLocalizedStaticText();
     setStatusKey(state.statusKey, state.statusParams, state.statusTone);
     setPanelCollapsed(state.collapsed);
@@ -577,24 +497,7 @@
   }
 
   function ensurePanelPlacement() {
-    if (!refs.root) {
-      return;
-    }
-    if (!isBilibiliVideoShellReady()) {
-      return;
-    }
-
-    const target = findDanmakuEmbedTarget();
-    if (!target?.container) {
-      return;
-    }
-
-    const alreadyPlaced = refs.root.parentElement === target.container && refs.root.nextElementSibling === target.before;
-    if (alreadyPlaced) {
-      return;
-    }
-
-    target.container.insertBefore(refs.root, target.before);
+    mountPanelIfReady();
   }
 
   function findDanmakuEmbedTarget() {
@@ -831,79 +734,7 @@
     }
   }
 
-  function updateSettingsStaticText() {
-    if (!refs.settingsModal) {
-      return;
-    }
-    const title = refs.settingsModal.querySelector(".bdsp-settings-title");
-    const compat = refs.settingsModal.querySelector(".bdsp-settings-compat");
-    const baseUrlHint = refs.settingsModal.querySelector(".bdsp-field small");
-    const modelInput = refs.llmModel;
-    const apiKeyLink = refs.apiKeyLink;
-    const uiLocaleLabel = refs.settingsModal.querySelector(".bdsp-settings-extra .bdsp-field span");
-    const autoOption = refs.uiLocale?.querySelector("option[value='auto']");
-    const cancelButton = refs.settingsModal.querySelector("[data-action='close-settings'].bdsp-button");
-    if (title) title.textContent = t("settings.title");
-    if (compat) compat.textContent = t("settings.compat");
-    if (baseUrlHint) baseUrlHint.textContent = t("settings.baseUrlExample");
-    if (modelInput) modelInput.placeholder = t("settings.modelPlaceholder");
-    if (apiKeyLink) {
-      apiKeyLink.textContent = t("settings.getApiKey");
-      apiKeyLink.href = apiKeyHelpUrl();
-    }
-    if (uiLocaleLabel) uiLocaleLabel.textContent = t("settings.uiLanguage");
-    if (autoOption) autoOption.textContent = t("settings.uiLanguageAuto");
-    if (refs.clearCache) refs.clearCache.textContent = t("settings.clearCache");
-    if (refs.saveSettings) refs.saveSettings.textContent = t("settings.save");
-    if (cancelButton) cancelButton.textContent = t("settings.cancel");
-  }
-
-  function updateSettingsForm() {
-    if (!refs.settingsModal) {
-      return;
-    }
-    refs.llmBaseUrl.value = state.llmConfig.baseUrl || "";
-    refs.llmModel.value = state.llmConfig.model || "";
-    refs.llmApiKey.value = state.llmConfig.apiKey || "";
-    refs.uiLocale.value = uiLocaleOverride;
-    updateSettingsStaticText();
-  }
-
-  function openSettingsModal() {
-    setPanelCollapsed(false);
-    updateSettingsForm();
-    refs.settingsModal.hidden = false;
-    refs.llmBaseUrl?.focus();
-  }
-
-  function closeSettingsModal() {
-    if (refs.settingsModal) {
-      refs.settingsModal.hidden = true;
-    }
-  }
-
-  async function saveSettingsFromModal() {
-    const nextConfig = {
-      baseUrl: refs.llmBaseUrl.value.trim(),
-      model: refs.llmModel.value.trim(),
-      apiKey: refs.llmApiKey.value.trim(),
-    };
-    const nextUiLocale = refs.uiLocale.value || "auto";
-    state.llmConfig = nextConfig;
-    uiLocaleOverride = ["auto", "zh", "en"].includes(nextUiLocale) ? nextUiLocale : "auto";
-    state.locale = getPreferredLocale();
-    await storageSet({
-      [LLM_CONFIG_STORAGE_KEY]: nextConfig,
-      [UI_LOCALE_STORAGE_KEY]: uiLocaleOverride,
-    });
-    closeSettingsModal();
-    applyLocalizedStaticText();
-    renderAll();
-    setStatusKey("status.settingsSaved", {}, "ok");
-  }
-
-  async function clearTranslationCacheFromModal() {
-    await TranslationCache?.clearTranslationCache?.();
+  async function refreshAfterCacheClear() {
     state.tracks = state.tracks.filter((track) => track.kind !== "ai");
     if (!state.tracks.some((track) => track.id === state.selectedTrackId)) {
       state.selectedTrackId = state.tracks[0]?.id || "";
@@ -915,6 +746,31 @@
     renderTracks();
     renderViewer();
     setStatusKey("status.cacheCleared", {}, "ok");
+  }
+
+  async function openSettings() {
+    try {
+      await sendMessage(MessageType.OPEN_SETTINGS);
+    } catch (error) {
+      setStatus(error.message, "error");
+    }
+  }
+
+  function registerSettingsChangeListener() {
+    chrome.storage?.onChanged?.addListener((changes, area) => {
+      if (area !== "local") return;
+      if (changes[UI_LOCALE_STORAGE_KEY]) {
+        const value = changes[UI_LOCALE_STORAGE_KEY].newValue;
+        uiLocaleOverride = ["zh", "en"].includes(value) ? value : "auto";
+        state.locale = getPreferredLocale();
+        applyLocalizedStaticText();
+        renderAll();
+      }
+      const cache = changes["bdsp.translationCache.v1"];
+      if (cache && !cache.newValue?.entries?.length) {
+        refreshAfterCacheClear().catch((error) => setStatus(error.message, "error"));
+      }
+    });
   }
 
   function applyLocalizedStaticText() {
@@ -971,7 +827,6 @@
     if (refs.resizer) {
       refs.resizer.title = t("panel.resizer");
     }
-    updateSettingsStaticText();
     updateTranslationControls();
     renderStatus();
     setPanelCollapsed(state.collapsed);
@@ -1952,11 +1807,19 @@
     if (!selectedTrack || state.translating) {
       return;
     }
-    if (!hasUsableLlmConfig(state.llmConfig)) {
-      openSettingsModal();
-      setStatusKey("status.translationNeedsConfig", {}, "warn");
+    try {
+      const status = await sendMessage(MessageType.GET_SETTINGS_STATUS);
+      if (!status.configured) {
+        setStatusKey("status.translationNeedsConfig", {}, "warn");
+        await openSettings();
+        return;
+      }
+    } catch (error) {
+      setStatus(error.message, "error");
       return;
     }
+    // The selected track can change while the configuration lookup is in flight.
+    if (state.translating || state.selectedTrackId !== selectedTrack.id || !state.tracks.includes(selectedTrack)) return;
 
     const targetLanguage = Translation.normalizeTargetLanguage(state.targetLanguage);
     const requestId = createTranslationRequestId();
@@ -2140,10 +2003,6 @@
   function normalizeProgressInteger(value) {
     const number = Number(value);
     return Number.isFinite(number) && number > 0 ? Math.floor(number) : 0;
-  }
-
-  function hasUsableLlmConfig(config) {
-    return Boolean(config?.baseUrl && config?.model && config?.apiKey);
   }
 
   async function restoreCachedTranslationsForSource(sourceTrack, sourceCues, options = {}) {
@@ -2542,100 +2401,90 @@
     renderAll();
   }
 
-  function startPlacementObserver() {
-    if (placementObserver || !document.body) {
-      return;
-    }
-    placementObserver = new MutationObserver(() => {
-      window.clearTimeout(placementRetryTimer);
-      placementRetryTimer = window.setTimeout(startOrRefresh, PLACEMENT_RETRY_MS);
-    });
-    placementObserver.observe(document.body, {
-      childList: true,
-      subtree: true,
-    });
-  }
-
-  function stopPlacementObserver() {
-    if (placementObserver) {
-      placementObserver.disconnect();
-      placementObserver = null;
-    }
-    window.clearTimeout(placementRetryTimer);
-    window.clearTimeout(mountDelayTimer);
-    pendingMountTarget = null;
-  }
-
-  function schedulePanelMount() {
-    if (refs.root?.isConnected) {
-      return;
-    }
-    if (!isBilibiliVideoShellReady()) {
-      pendingMountTarget = null;
-      window.clearTimeout(mountDelayTimer);
-      return;
-    }
-
+  function watchPanelPlacement() {
+    if (!placementObserver) placementObserver = new MutationObserver(startOrRefresh);
+    placementObserver.disconnect();
     const target = findDanmakuEmbedTarget();
-    if (!target?.container || !target.before?.isConnected) {
-      pendingMountTarget = null;
-      window.clearTimeout(mountDelayTimer);
+    const header = document.querySelector("#biliMainHeader, .bili-header, .mini-header, .bili-header__bar, .left-entry");
+    if (!target?.before?.isConnected || !header || !document.querySelector("#mirror-vdcon, .video-container-v1")) {
+      // Discovery only. Once the host exists, watch its ancestor path instead
+      // of processing every subtitle/player/comment mutation on the page.
+      placementObserver.observe(document.documentElement, {
+        childList: true, subtree: true, attributes: true, attributeFilter: ["data-server-rendered"],
+      });
       return;
     }
+    const ancestors = new Set();
+    for (const node of [target.before, header]) {
+      for (let parent = node.parentElement; parent; parent = parent.parentElement) ancestors.add(parent);
+    }
+    for (const node of ancestors) {
+      placementObserver.observe(node, {
+        childList: true, attributes: true, attributeFilter: ["data-server-rendered"],
+      });
+    }
+    if (!isPanelAtTarget(target)) placementObserver.observe(header, { childList: true, subtree: true });
+  }
 
-    if (pendingMountTarget === target.before) {
+  function isSupportedVideoRoute() {
+    const url = new URL(window.location.href);
+    return url.origin === "https://www.bilibili.com" && url.pathname.startsWith("/video/");
+  }
+
+  function getPanelMountTarget() {
+    if (!isSupportedVideoRoute() || !isBilibiliVideoShellReady()) return null;
+    const target = findDanmakuEmbedTarget();
+    if (!target?.container?.isConnected || !target.before?.isConnected || target.before.parentElement !== target.container) return null;
+    return target;
+  }
+
+  function isPanelAtTarget(target) {
+    return refs.root?.isConnected && refs.root.parentElement === target.container && refs.root.nextElementSibling === target.before;
+  }
+
+  function mountPanelIfReady() {
+    const target = getPanelMountTarget();
+    if (!target || isPanelAtTarget(target)) return;
+    if (refs.root) {
+      target.container.insertBefore(refs.root, target.before);
+    } else if (!createPanel()) {
       return;
     }
-
-    pendingMountTarget = target.before;
-    window.clearTimeout(mountDelayTimer);
-    mountDelayTimer = window.setTimeout(() => {
-      if (refs.root?.isConnected || pendingMountTarget !== target.before || !target.before.isConnected) {
-        return;
-      }
-      if (!createPanel()) {
-        pendingMountTarget = null;
-        return;
-      }
-      pendingMountTarget = null;
-      stopPlacementObserver();
-      renderAll();
-    }, document.readyState === "complete" ? PANEL_MOUNT_DELAY_MS : PANEL_MOUNT_DELAY_MS + 1200);
+    renderAll();
   }
 
   function startOrRefresh() {
-    if (!isBilibiliVideoShellReady()) {
-      if (refs.root?.isConnected) {
-        refs.root.remove();
-      }
-      pendingMountTarget = null;
-      window.clearTimeout(mountDelayTimer);
+    if (!isSupportedVideoRoute()) {
+      placementObserver?.disconnect();
+      if (refs.root?.isConnected) refs.root.remove();
+      window.clearTimeout(state.loadTracksTimer);
+      if (state.lastHref !== window.location.href) refreshVideoContext();
       return;
     }
-
-    if (refs.root) {
-      ensurePanelPlacement();
-    } else {
-      schedulePanelMount();
-    }
-    refreshVideoContext();
+    mountPanelIfReady();
+    watchPanelPlacement();
+    if (isBilibiliVideoShellReady()) refreshVideoContext();
   }
 
   ready(async () => {
     registerRuntimeMessageListener();
+    registerSettingsChangeListener();
     bindVideoActivityListeners();
     await loadPersistedSettings();
-    startPlacementObserver();
-    if (document.readyState === "complete") {
-      startOrRefresh();
-    } else {
-      window.addEventListener("load", startOrRefresh, { once: true });
-    }
+    startOrRefresh();
     startRouteWatcher();
+    window.addEventListener("pageshow", (event) => {
+      if (!event.persisted) return;
+      startOrRefresh();
+      startRouteWatcher();
+    });
     window.addEventListener("languagechange", handleLanguageChange);
     window.addEventListener("resize", handleSubtitleOverlayViewportChange);
     document.addEventListener("fullscreenchange", handleSubtitleOverlayViewportChange);
     window.addEventListener("pagehide", () => {
+      placementObserver?.disconnect();
+      window.clearInterval(routeTimer);
+      routeTimer = 0;
       window.clearTimeout(overlayPositionSaveTimer);
       disableNativeSubtitleTrack();
       TranslationCache?.pruneStoredTranslationCache?.().catch(() => {});
