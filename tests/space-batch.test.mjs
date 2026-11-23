@@ -48,6 +48,7 @@ test("selects a Chinese subtitle when available, otherwise the first track", () 
     { lan: "bad", subtitleUrl: "" }
   ];
   assert.equal(Core.selectTracks(tracks, "auto")[0].lan, "zh-CN");
+  assert.equal(Core.selectTracks([{ lan: "en", subtitleUrl: "e" }, { lan: "ai-zh", subtitleUrl: "z" }], "auto")[0].lan, "ai-zh");
   assert.equal(Core.selectTracks(tracks, "all").length, 2);
   assert.equal(Core.selectTracks(tracks.slice(0, 1), "auto")[0].lan, "en");
   assert.deepEqual(Core.selectTracks([], "auto"), []);
