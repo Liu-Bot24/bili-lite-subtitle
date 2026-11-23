@@ -38,7 +38,7 @@
       ? subtitles.filter(track => track && typeof track.subtitleUrl === "string" && track.subtitleUrl)
       : [];
     if (preference === "all") return tracks;
-    const chinese = tracks.find(track => /^zh(?:-|$)/i.test(track.lan || ""));
+    const chinese = tracks.find(track => /^(?:zh|ai-zh)(?:-|$)/i.test(track.lan || ""));
     return chinese ? [chinese] : tracks.slice(0, 1);
   }
 
