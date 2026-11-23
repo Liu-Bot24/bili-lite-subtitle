@@ -58,6 +58,12 @@ After installation, open a Bilibili video page and use the subtitle panel on the
 - Mainly supports regular Bilibili video pages
 - Requires the video to have available subtitles
 
+## Batch Subtitles for a Creator's Series
+
+Open a **series/collection detail page** in a creator's Bilibili space and click **批量获取字幕** next to "Play all". Select individual TXT/SRT files or one combined TXT. Choose Chinese-preferred or all available subtitle languages; multi-part videos are included by default. Missing tracks and failed requests are listed, and the batch can be cancelled.
+
+The feature processes **only cards already loaded in the current series page**, up to 250 unique videos. It does not crawl the creator's uploads or automatically paginate. Bilibili login, anti-abuse checks and browser multiple-download permissions may affect results.
+
 ## Permissions And Privacy
 
 The extension only requests the permissions needed for subtitle features:
