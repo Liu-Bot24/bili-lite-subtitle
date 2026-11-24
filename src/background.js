@@ -13,6 +13,7 @@ const MESSAGE_TYPES = new Set([
   "GET_SETTINGS_STATUS",
   "GET_VIDEO_SUBTITLES",
   "DOWNLOAD_SUBTITLE",
+  "SAVE_BATCH_TEXT",
   "OPEN_SITE_RESULT",
   "TRANSLATE_SUBTITLE",
   "PRUNE_TRANSLATION_CACHE",
@@ -79,6 +80,26 @@ async function handleMessage(message, sender) {
 
   if (normalizedMessage.type === "DOWNLOAD_SUBTITLE") {
     return handleDownloadSubtitle(normalizedMessage, sender);
+  }
+
+  if (normalizedMessage.type === "SAVE_BATCH_TEXT") {
+    const source = sender?.tab?.url || "";
+    if (!source.startsWith("https://space.bilibili.com/")) {
+      throw new Api.BilibiliApiError("Batch export is only available on a Bilibili space page", {
+        code: "INVALID_BATCH_ORIGIN",
+      });
+    }
+    if (typeof normalizedMessage.text !== "string" || !normalizedMessage.text
+        || normalizedMessage.text.length > 8_000_000) {
+      throw new Api.BilibiliApiError("Batch text is empty or exceeds the 8 MB character limit", {
+        code: "INVALID_BATCH_TEXT",
+      });
+    }
+    const filename = ensureDownloadFilename(normalizedMessage.filename || "B站合集字幕.txt", "txt");
+    const downloadId = await saveTextDownload(
+      normalizedMessage.text, filename, "text/plain;charset=utf-8", "txt"
+    );
+    return { type: "SAVE_BATCH_TEXT_RESULT", filename, downloadId };
   }
 
   if (normalizedMessage.type === "TRANSLATE_SUBTITLE") {

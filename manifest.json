@@ -50,6 +50,19 @@
         "src/panel.css"
       ],
       "run_at": "document_end"
+    },
+    {
+      "matches": [
+        "https://space.bilibili.com/*"
+      ],
+      "js": [
+        "src/space-batch-core.js",
+        "src/space-batch.js"
+      ],
+      "css": [
+        "src/space-batch.css"
+      ],
+      "run_at": "document_end"
     }
   ],
   "options_ui": {
